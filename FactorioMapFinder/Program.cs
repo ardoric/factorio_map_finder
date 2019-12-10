@@ -57,6 +57,66 @@ namespace FactorioMapFinder
             return res;
         }
 
+        static int BigIron(Bitmap map, int threshold)
+        {
+            bool[,] visited = new bool[map.Height, map.Width];
+            int x = map.Width / 2;
+            int y = map.Height / 2;
+
+            for (int l = 0; l < 100; l++)
+            // look for iron in a 200x200 square from beginning
+            {
+                int j = y - l;
+                int i = x - l;
+
+                for (; i < x + l; i++)
+                {
+                    Color p = map.GetPixel(i, j);
+                    if (ores.ContainsKey(p) && ores[p] == "iron")
+                    {
+                        int patch_size = count_patch(i, j, map, visited);
+                        if (patch_size > threshold)
+                            return patch_size;
+                    }
+                }
+                for (; j < y + l; j++)
+                {
+                    Color p = map.GetPixel(i, j);
+                    if (ores.ContainsKey(p) && ores[p] == "iron")
+                    {
+                        int patch_size = count_patch(i, j, map, visited);
+                        if (patch_size > threshold)
+                            return patch_size;
+                    }
+                }
+                for (; i > x - l; i--)
+                {
+                    Color p = map.GetPixel(i, j);
+                    if (ores.ContainsKey(p) && ores[p] == "iron")
+                    {
+                        int patch_size = count_patch(i, j, map, visited);
+                        if (patch_size > threshold)
+                            return patch_size;
+                    }
+                }
+                for (; j < y - l; j--)
+                {
+                    Color p = map.GetPixel(i, j);
+                    if (ores.ContainsKey(p) && ores[p] == "iron")
+                    {
+                        int patch_size = count_patch(i, j, map, visited);
+                        if (patch_size > threshold)
+                            return patch_size;
+                    }
+                }
+
+
+            }
+
+            return 0;
+
+        }
+
         static bool HasBigIron(Bitmap map, int threshold)
         {
             bool[,] visited = new bool[map.Height,map.Width];
@@ -223,7 +283,7 @@ namespace FactorioMapFinder
             {
                 // Console.WriteLine(f);
                 Bitmap map = new Bitmap(f);
-                if (HasBigIron(map, 3000))
+                if (HasBigIron(map, 6000))
                 {
                     if (HasCoalCloseToWater(map, 20))
                     {
