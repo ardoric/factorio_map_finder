@@ -5,6 +5,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace FactorioMapFinder
@@ -273,27 +274,60 @@ namespace FactorioMapFinder
             return false;
         }
 
+        static void checkMap(string f)
+        {
+            Bitmap map = new Bitmap(f);
+            if (HasBigIron(map, 6000))
+            {
+                if (HasCoalCloseToWater(map, 20))
+                {
+                    File.Copy(f, Path.GetDirectoryName(f) + "\\nefrums\\" + Path.GetFileName(f), true);
+                    Console.WriteLine(Path.GetDirectoryName(f) + "\\nefrums\\" + Path.GetFileName(f));
+                }
+            }
+        }
+
+        
+
         static void Main(string[] args)
         {
             string base_dir = args[0];
             if (!Directory.Exists(base_dir + "nefrums"))
                 Directory.CreateDirectory(base_dir + "nefrums");
 
-            foreach (string f in Directory.GetFiles(base_dir))
+            Queue<string> files = new Queue<string>(Directory.GetFiles(base_dir));
+
+            void thread_run()
             {
-                // Console.WriteLine(f);
-                Bitmap map = new Bitmap(f);
-                if (HasBigIron(map, 6000))
+                string[] files_to_check;
+                while (true)
                 {
-                    if (HasCoalCloseToWater(map, 20))
+                    lock (files)
                     {
-                        File.Copy(f, Path.GetDirectoryName(f) + "\\nefrums\\" + Path.GetFileName(f), true);
-                        Console.WriteLine(Path.GetDirectoryName(f) + "\\nefrums\\" + Path.GetFileName(f));
+                        if (files.Count <= 0)
+                            return;
+
+                        files_to_check = new string[Math.Min(1000, files.Count)];
+                        for (int i = 0; i < files_to_check.Length; i++)
+                            files_to_check[i] = files.Dequeue();
                     }
+
+                    foreach (string f in files_to_check)
+                        checkMap(f);
+
                 }
-                
-                    // map.Save(f.Replace(".png", "") + "_processed.png", ImageFormat.Png);
             }
+
+            Thread[] threads = new Thread[6];
+            for (int i = 0; i < threads.Length; i++)
+            {
+                threads[i] = new Thread(thread_run);
+                threads[i].Start();
+            }
+
+            for (int i = 0; i < threads.Length; i++)
+                threads[i].Join();
+
         }
     }
 }
